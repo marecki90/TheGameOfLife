@@ -9,7 +9,7 @@ Game *Game::currentInstance = new Game();
 Game::Game() :basicCellSize(0), basicTimeInterval(1), marginFactor(0) {
 }
 
-Game::Game(int *argc, char **argv) :basicCellSize(5), basicTimeInterval(200), marginFactor(15) {
+Game::Game(int *argc, char **argv) :basicCellSize(4), basicTimeInterval(50), marginFactor(15) {
 	cellSize = basicCellSize * Rules::zoom;
 	timeInterval = basicTimeInterval * Rules::gameSpeed;
 	getDesktopResolution();
@@ -33,7 +33,7 @@ void Game::getDesktopResolution(void) {
 	RECT desktop;
 	const HWND hDesktop = GetDesktopWindow();
 	GetWindowRect(hDesktop, &desktop);
-	screenWidth = desktop.right; // TODO pozniej usunac
+	screenWidth = desktop.right;
 	screenHeight = desktop.bottom;
 
 	visibleBoardWidth = desktop.right / cellSize + 1;
@@ -95,38 +95,33 @@ void Game::boardInitialize(void) {
 }
 
 void Game::nextStep(int timerValue) {
-	Game *thisGame = Game::currentInstance;
-	//for (int x = 0; x < thisGame->boardWidth; x++) {
-	//	for (int y = 0; y < thisGame->boardHeight; y++) {
-	//		thisGame->board[x][y]->setState(!thisGame->board[x][y]->IsAlive());
-	//	}
-	//}
-	for (int x = 0; x < thisGame->boardWidth; x++) {
-		for (int y = 0; y < thisGame->boardHeight; y++) {
-			thisGame->board[x][y]->setToNextState();
+	Game *game = Game::currentInstance;
+	for (int x = 0; x < game->boardWidth; x++) {
+		for (int y = 0; y < game->boardHeight; y++) {
+			game->board[x][y]->setToNextState();
 		}
 	}
 	glutPostRedisplay();
-	for (int x = 1; x < thisGame->boardWidth - 1; x++) {
-		for (int y = 1; y < thisGame->boardHeight - 1; y++) {
-			thisGame->board[x][y]->calculateNextState();
+	for (int x = 1; x < game->boardWidth - 1; x++) {
+		for (int y = 1; y < game->boardHeight - 1; y++) {
+			game->board[x][y]->calculateNextState();
 		}
 	}
 	//calculateAllCells();
-	glutTimerFunc(thisGame->timeInterval, Game::nextStep, 1);
+	glutTimerFunc(game->timeInterval, Game::nextStep, 1);
 }
 
 void Game::displayBoard(void) {
-	Game *thisGame = Game::currentInstance;
+	Game *game = Game::currentInstance;
 	glClear(GL_COLOR_BUFFER_BIT);
-	for (int x = 0; x < thisGame->visibleBoardWidth; x++) {
-		for (int y = 0; y < thisGame->visibleBoardHeight; y++) {
-			if (thisGame->board[x + thisGame->boardOffset][y + thisGame->boardOffset]->IsAlive()) {
+	for (int x = 0; x < game->visibleBoardWidth; x++) {
+		for (int y = 0; y < game->visibleBoardHeight; y++) {
+			if (game->board[x + game->boardOffset][y + game->boardOffset]->IsAlive()) {
 				glBegin(GL_QUADS);
-				glVertex2f((float)x * thisGame->cellSize, (float)y * thisGame->cellSize);
-				glVertex2f((float)(x + 1) * thisGame->cellSize, (float)y * thisGame->cellSize);
-				glVertex2f((float)(x + 1) * thisGame->cellSize, (float)(y + 1) * thisGame->cellSize);
-				glVertex2f((float)x * thisGame->cellSize, (float)(y + 1) * thisGame->cellSize);
+				glVertex2f((float)x * game->cellSize, (float)y * game->cellSize);
+				glVertex2f((float)(x + 1) * game->cellSize, (float)y * game->cellSize);
+				glVertex2f((float)(x + 1) * game->cellSize, (float)(y + 1) * game->cellSize);
+				glVertex2f((float)x * game->cellSize, (float)(y + 1) * game->cellSize);
 				glEnd();
 			}
 		}
@@ -135,17 +130,17 @@ void Game::displayBoard(void) {
 }
 
 void Game::calculateAllCells(void) {
-	Game *thisGame = Game::currentInstance;
+	Game *game = Game::currentInstance;
 	int x, y;
 	// chceck cells without borders
-	for (x = 1; x < thisGame->boardWidth - 1; x++) {
-		for (y = 1; y < thisGame->boardHeight - 1; y++) {
-			thisGame->board[x][y]->calculateNextState();
+	for (x = 1; x < game->boardWidth - 1; x++) {
+		for (y = 1; y < game->boardHeight - 1; y++) {
+			game->board[x][y]->calculateNextState();
 		}
 	}
-	for (int x = 0; x < thisGame->boardWidth; x++) {
-		for (int y = 0; y < thisGame->boardHeight; y++) {
-			thisGame->board[x][y]->setToNextState();
+	for (int x = 0; x < game->boardWidth; x++) {
+		for (int y = 0; y < game->boardHeight; y++) {
+			game->board[x][y]->setToNextState();
 		}
 	}
 }
