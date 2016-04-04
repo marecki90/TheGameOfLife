@@ -1,13 +1,10 @@
 #include "Game.h"
 #include "Rules.h"
 #include "wtypes.h"
-#include "ShellScalingAPI.h"
+//#include "ShellScalingAPI.h"
 #include <glut.h>
 
-Game *Game::currentInstance = new Game();
-
-Game::Game() :basicCellSize(0), basicTimeInterval(1), marginFactor(0) {
-}
+Game *Game::currentInstance = NULL;
 
 Game::Game(int *argc, char **argv) :basicCellSize(4), basicTimeInterval(50), marginFactor(15) {
 	cellSize = basicCellSize * Rules::zoom;
@@ -17,22 +14,21 @@ Game::Game(int *argc, char **argv) :basicCellSize(4), basicTimeInterval(50), mar
 	glutInitialize(argc, argv);
 	myGlutInitialize();
 	glutTimerFunc(timeInterval, Game::nextStep, 1);
-	for (int x = 1; x < boardWidth - 1; x++) {
-		for (int y = 1; y < boardHeight - 1; y++) {
-			board[x][y]->calculateNextState();
-		}
-	}
-	currentInstance = this;
-	//calculateAllCells();
 }
 
 Game::~Game() {
+	for (int x = 0; x < boardWidth; x++) {
+		for (int y = 0; y < boardHeight; y++) {
+			board[x][y]->~Cell();
+		}
+	}
 }
 
 void Game::getDesktopResolution(void) {
 	RECT desktop;
 	const HWND hDesktop = GetDesktopWindow();
 	GetWindowRect(hDesktop, &desktop);
+
 	screenWidth = desktop.right;
 	screenHeight = desktop.bottom;
 
@@ -65,7 +61,7 @@ void Game::glutInitialize(int *argc, char **argv) {
 
 void Game::myGlutInitialize(void) {
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glColor3f(1.0, 0.0, 0.0);
+	glColor3f(1.0, 1.0, 1.0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluOrtho2D(0.0, (float)screenWidth, 0.0, (float)screenHeight);
@@ -73,74 +69,75 @@ void Game::myGlutInitialize(void) {
 }
 
 void Game::boardInitialize(void) {
-	int counter = 0;
+	numberOfAliveCells = 0;
 	board = new Cell**[boardWidth];
 	for (int x = 0; x < boardWidth; x++) {
 		board[x] = new Cell*[boardHeight];
 		for (int y = 0; y < boardHeight; y++) {
-			board[x][y] = new Cell(x, y, board);
+			board[x][y] = new Cell();
 			board[x][y]->setState(true);
-			counter++;
+			numberOfAliveCells++;
 			if (x == 0 || x == boardWidth - 1 || y == 0 || y == boardHeight - 1) {
 				board[x][y]->markBorder();
 			}
 		}
 	}
-	for (int x = 1; x < boardWidth - 1; x++) {
-		for (int y = 1; y < boardHeight - 1; y++) {
-			board[x][y]->collectNeighbours();
+	calculateNextBoardState();
+	currentInstance = this;
+}
+
+int Game::countAliveNeighbours(int x, int y) {
+	int numberOfAliveNeighbours = 0;
+	for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
+		if (i != 0 || j != 0) {
+			if (board[x + i][y + j]->IsAlive()) {
+				numberOfAliveNeighbours++;
+			}
 		}
 	}
-	currentInstance = this;
+	return numberOfAliveNeighbours;
+}
+
+void Game::calculateNextBoardState(void) {
+	forBoardWithoutBorder(x, y) {
+		board[x][y]->calculateNextState(countAliveNeighbours(x, y));
+	}
+}
+
+void Game::setBoardToNextState(void) {
+	forBoardWithoutBorder(x, y) {
+		board[x][y]->setToNextState();
+	}
+}
+
+void Game::renderCell(int x, int y) {
+	glBegin(GL_QUADS); {
+		glVertex2i(x * cellSize, y * cellSize);
+		glVertex2i((x + 1) * cellSize, y * cellSize);
+		glVertex2i((x + 1) * cellSize, (y + 1) * cellSize);
+		glVertex2i(x * cellSize, (y + 1) * cellSize);
+	}
+	glEnd();
 }
 
 void Game::nextStep(int timerValue) {
 	Game *game = Game::currentInstance;
-	for (int x = 0; x < game->boardWidth; x++) {
-		for (int y = 0; y < game->boardHeight; y++) {
-			game->board[x][y]->setToNextState();
-		}
-	}
+	game->setBoardToNextState();
 	glutPostRedisplay();
-	for (int x = 1; x < game->boardWidth - 1; x++) {
-		for (int y = 1; y < game->boardHeight - 1; y++) {
-			game->board[x][y]->calculateNextState();
-		}
-	}
-	//calculateAllCells();
+	game->calculateNextBoardState();
 	glutTimerFunc(game->timeInterval, Game::nextStep, 1);
 }
 
 void Game::displayBoard(void) {
 	Game *game = Game::currentInstance;
+	int cellSize = game->cellSize;
 	glClear(GL_COLOR_BUFFER_BIT);
 	for (int x = 0; x < game->visibleBoardWidth; x++) {
 		for (int y = 0; y < game->visibleBoardHeight; y++) {
 			if (game->board[x + game->boardOffset][y + game->boardOffset]->IsAlive()) {
-				glBegin(GL_QUADS);
-				glVertex2f((float)x * game->cellSize, (float)y * game->cellSize);
-				glVertex2f((float)(x + 1) * game->cellSize, (float)y * game->cellSize);
-				glVertex2f((float)(x + 1) * game->cellSize, (float)(y + 1) * game->cellSize);
-				glVertex2f((float)x * game->cellSize, (float)(y + 1) * game->cellSize);
-				glEnd();
+				game->renderCell(x, y);
 			}
 		}
 	}
 	glFlush();
-}
-
-void Game::calculateAllCells(void) {
-	Game *game = Game::currentInstance;
-	int x, y;
-	// chceck cells without borders
-	for (x = 1; x < game->boardWidth - 1; x++) {
-		for (y = 1; y < game->boardHeight - 1; y++) {
-			game->board[x][y]->calculateNextState();
-		}
-	}
-	for (int x = 0; x < game->boardWidth; x++) {
-		for (int y = 0; y < game->boardHeight; y++) {
-			game->board[x][y]->setToNextState();
-		}
-	}
 }

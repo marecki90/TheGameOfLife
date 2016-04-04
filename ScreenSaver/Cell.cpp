@@ -3,43 +3,24 @@
 #include <list>
 
 
-Cell::Cell(int x, int y, Cell ***array) {
-	this->x = x;
-	this->y = y;
-	this->array = array;
+Cell::Cell() {
 	isPoisoned = false;
 	isNextStateCalculated = false;
 	isAlive = false;
 	willBeAlive = false;
 	isBorderElement = false;
-	areNeighboursCollected = false;
 	roundsToDeath = 0;
 }
 
 Cell::~Cell() {
 }
 
-bool Cell::IsAlive(void)
-{
+bool Cell::IsAlive(void) {
 	return isAlive;
 }
 
-void Cell::setState(bool state)
-{
+void Cell::setState(bool state) {
 	isAlive = state;
-}
-
-void Cell::collectNeighbours(void) {
-	if (!isBorderElement) {
-		int index = 0;
-		for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
-			if (i != 0 || j != 0) {
-				neighbours[index] = array[x + i][y + j];
-				index++;
-			}
-		}
-	}
-	areNeighboursCollected = true;
 }
 
 void Cell::markBorder(void) {
@@ -47,8 +28,7 @@ void Cell::markBorder(void) {
 	isAlive = false;
 }
 
-bool Cell::willCellBeAlive(void)
-{
+bool Cell::willCellBeAlive(int numberOfAliveNeighbours) {
 	if (isBorderElement) {
 		return false;
 	}
@@ -58,8 +38,6 @@ bool Cell::willCellBeAlive(void)
 	if (Rules::maxRoundsToDeath > 0 && roundsToDeath == 1) {
 		return false;
 	}
-	int numberOfAliveNeighbours;
-	numberOfAliveNeighbours = countAliveNeighbours();
 	if (Rules::numberOfNeighboursToMakeCellAlive[numberOfAliveNeighbours]) {
 		return true;
 	}
@@ -71,17 +49,17 @@ bool Cell::willCellBeAlive(void)
 	}
 }
 
-void Cell::poison(void) {
-	if (areNeighboursCollected) {
-		if (isAlive && !isPoisoned) {
-			isPoisoned = true;
-			//for each (Cell neighbour in getNeighbours()) {
-			for (int i = 0; i < numberOfNeighbours; i++) {
-				neighbours[i]->poison();
-			}
-		}
-	}
-}
+//void Cell::poison(void) {
+//	if (areNeighboursCollected) {
+//		if (isAlive && !isPoisoned) {
+//			isPoisoned = true;
+//			//for each (Cell neighbour in getNeighbours()) {
+//			for (int i = 0; i < numberOfNeighbours; i++) {
+//				neighbours[i]->poison();
+//			}
+//		}
+//	}
+//}
 
 void Cell::makeAlive(void) {
 	if (!isAlive) {
@@ -90,28 +68,17 @@ void Cell::makeAlive(void) {
 	}
 }
 
-void Cell::calculateNextState(void) {
-	willBeAlive = willCellBeAlive();
+void Cell::calculateNextState(int numberOfAliveNeighbours) {
+	willBeAlive = willCellBeAlive(numberOfAliveNeighbours);
 	isNextStateCalculated = true;
 }
 
 void Cell::setToNextState(void) {
 	if (isNextStateCalculated) {
-		isAlive = willBeAlive;
+		if (!isBorderElement) {
+			isAlive = willBeAlive;
+		}
 		isNextStateCalculated = false;
 		willBeAlive = false;
 	}
-}
-
-int Cell::countAliveNeighbours(void) {
-	int counter = 0;
-	if (areNeighboursCollected) {
-		//for each (Cell neighbour in neighbours()) {
-		for (int i = 0; i < numberOfNeighbours; i++) {
-			if (neighbours[i]->isAlive) {
-				counter++;
-			}
-		}
-	}
-	return counter;
 }
