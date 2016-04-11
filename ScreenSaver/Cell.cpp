@@ -4,12 +4,12 @@
 
 
 Cell::Cell() {
-	isPoisoned = false;
+	//isPoisoned = false;
 	isNextStateCalculated = false;
 	isAlive = false;
 	willBeAlive = false;
 	isBorderElement = false;
-	roundsToDeath = 0;
+	roundsToDeath = Rules::maxRoundsToDeath;
 }
 
 Cell::~Cell() {
@@ -32,10 +32,10 @@ bool Cell::willCellBeAlive(int numberOfAliveNeighbours) {
 	if (isBorderElement) {
 		return false;
 	}
-	if (Rules::areBordersPoisoned && isPoisoned) {
-		return false;
-	}
-	if (Rules::maxRoundsToDeath > 0 && roundsToDeath == 1) {
+	//if (Rules::areBordersPoisoned && isPoisoned) {
+	//	return false;
+	//}
+	if (Rules::maxRoundsToDeath > 0 && --roundsToDeath == 0) {
 		return false;
 	}
 	if (Rules::numberOfNeighboursToMakeCellAlive[numberOfAliveNeighbours]) {
@@ -76,7 +76,12 @@ void Cell::calculateNextState(int numberOfAliveNeighbours) {
 void Cell::setToNextState(void) {
 	if (isNextStateCalculated) {
 		if (!isBorderElement) {
-			isAlive = willBeAlive;
+			if (isAlive) {
+				isAlive = willBeAlive;
+			}
+			else if(willBeAlive) {
+				makeAlive();
+			}
 		}
 		isNextStateCalculated = false;
 		willBeAlive = false;

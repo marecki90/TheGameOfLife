@@ -6,7 +6,7 @@
 
 Game *Game::currentInstance = NULL;
 
-Game::Game(int *argc, char **argv) :basicCellSize(4), basicTimeInterval(50), marginFactor(15) {
+Game::Game(int *argc, char **argv) :basicCellSize(3), basicTimeInterval(20), marginFactor(15) {
 	cellSize = basicCellSize * Rules::zoom;
 	timeInterval = basicTimeInterval * Rules::gameSpeed;
 	getDesktopResolution();
@@ -19,9 +19,12 @@ Game::Game(int *argc, char **argv) :basicCellSize(4), basicTimeInterval(50), mar
 Game::~Game() {
 	for (int x = 0; x < boardWidth; x++) {
 		for (int y = 0; y < boardHeight; y++) {
-			board[x][y]->~Cell();
+			//board[x][y]->~Cell();
+			delete board[x][y];
 		}
+		delete[] board[x];
 	}
+	delete [] board;
 }
 
 void Game::getDesktopResolution(void) {
@@ -99,13 +102,13 @@ int Game::countAliveNeighbours(int x, int y) {
 }
 
 void Game::calculateNextBoardState(void) {
-	forBoardWithoutBorder(x, y) {
+	loopThroughBoardWithoutBorder(x, y) {
 		board[x][y]->calculateNextState(countAliveNeighbours(x, y));
 	}
 }
 
 void Game::setBoardToNextState(void) {
-	forBoardWithoutBorder(x, y) {
+	loopThroughBoardWithoutBorder(x, y) {
 		board[x][y]->setToNextState();
 	}
 }

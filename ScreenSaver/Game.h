@@ -3,7 +3,7 @@
 #pragma once
 class Game {
 
-#define forBoardWithoutBorder(x, y) for (int x = 1; x < boardWidth - 1; x++) for (int y = 1; y < boardHeight - 1; y++)
+#define loopThroughBoardWithoutBorder(x, y) for (int x = 1; x < boardWidth - 1; x++) for (int y = 1; y < boardHeight - 1; y++)
 
 public:
 	Game(int *argc, char **argv);

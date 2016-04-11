@@ -13,7 +13,7 @@ public:
 private:
 	bool isAlive;
 	bool willBeAlive;
-	bool isPoisoned;
+	//bool isPoisoned;
 	bool isNextStateCalculated;
 	bool isBorderElement;
 	int roundsToDeath;
