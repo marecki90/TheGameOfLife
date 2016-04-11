@@ -122,6 +122,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Rules.cpp" />
+    <ClCompile Include="SettingsMainWindow.cpp" />
     <ClCompile Include="TrayIconManagment.cpp" />
   </ItemGroup>
   <ItemGroup>
